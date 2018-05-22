@@ -1531,22 +1531,41 @@ public class UserManagementActor extends BaseActor {
         userMap.put(JsonKey.ROLES, roles);
 
         String accessToken = "";
+        boolean isSocialRegister = (boolean) userMap.get("isSocialRegister");
+        String userId = "";
+        System.out.println('User Request, isSSOEnabled'+ isSSOEnabled.toString())
         if (isSSOEnabled) {
             try {
-                String userId = "";
-                Map<String, String> responseMap = ssoManager.createUser(userMap);
-                userId = responseMap.get(JsonKey.USER_ID);
-                accessToken = responseMap.get(JsonKey.ACCESSTOKEN);
-                if (!StringUtils.isBlank(userId)) {
+                if (isSocialRegister) {
+                    userId = (String) userMap.get(JsonKey.USER_ID);
+                    System.out.println('User Request, isSSOEnabled'+ userId)
+                    if (StringUtils.isNotBlank(userId)) {
+                        userMap.put(JsonKey.USER_ID, userId);
+                        userMap.put(JsonKey.ID, userId);
+                    } else {
+                        ProjectCommonException exception = new ProjectCommonException(
+                                ResponseCode.userRegUnSuccessfull.getErrorCode(),
+                                ResponseCode.userRegUnSuccessfull.getErrorMessage(),
+                                ResponseCode.SERVER_ERROR.getResponseCode());
+                        sender().tell(exception, self());
+                        return;
+                    }
+                } else {
+                    Map<String, String> responseMap = ssoManager.createUser(userMap);
+                    userId = responseMap.get(JsonKey.USER_ID);
+                    accessToken = responseMap.get(JsonKey.ACCESSTOKEN);
+                    if (!StringUtils.isBlank(userId)) {
                     userMap.put(JsonKey.USER_ID, userId);
                     userMap.put(JsonKey.ID, userId);
-                } else {
-                    ProjectCommonException exception = new ProjectCommonException(
+                    } else {
+                    ProjectCommonException exception =
+                        new ProjectCommonException(
                             ResponseCode.userRegUnSuccessfull.getErrorCode(),
                             ResponseCode.userRegUnSuccessfull.getErrorMessage(),
                             ResponseCode.SERVER_ERROR.getResponseCode());
                     sender().tell(exception, self());
                     return;
+                    }
                 }
             } catch (Exception exception) {
                 ProjectLogger.log(exception.getMessage(), exception);
@@ -1554,10 +1573,9 @@ public class UserManagementActor extends BaseActor {
                 return;
             }
         } else {
-            userMap.put(JsonKey.USER_ID,
-                    OneWayHashing.encryptVal((String) userMap.get(JsonKey.USERNAME)));
-            userMap.put(JsonKey.ID,
-                    OneWayHashing.encryptVal((String) userMap.get(JsonKey.USERNAME)));
+        userMap.put(
+            JsonKey.USER_ID, OneWayHashing.encryptVal((String) userMap.get(JsonKey.USERNAME)));
+        userMap.put(JsonKey.ID, OneWayHashing.encryptVal((String) userMap.get(JsonKey.USERNAME)));
         }
 
         userMap.put(JsonKey.CREATED_DATE, ProjectUtil.getFormattedDate());
