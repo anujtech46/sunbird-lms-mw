@@ -1533,12 +1533,10 @@ public class UserManagementActor extends BaseActor {
         String accessToken = "";
         boolean isSocialRegister = (boolean) userMap.get("isSocialRegister");
         String userId = "";
-        System.out.println('User Request, isSSOEnabled'+ isSSOEnabled.toString())
         if (isSSOEnabled) {
             try {
                 if (isSocialRegister) {
                     userId = (String) userMap.get(JsonKey.USER_ID);
-                    System.out.println('User Request, isSSOEnabled'+ userId)
                     if (StringUtils.isNotBlank(userId)) {
                         userMap.put(JsonKey.USER_ID, userId);
                         userMap.put(JsonKey.ID, userId);
@@ -1578,6 +1576,7 @@ public class UserManagementActor extends BaseActor {
         userMap.put(JsonKey.ID, OneWayHashing.encryptVal((String) userMap.get(JsonKey.USERNAME)));
         }
 
+        userMap.remove("isSocialRegister");
         userMap.put(JsonKey.CREATED_DATE, ProjectUtil.getFormattedDate());
         userMap.put(JsonKey.STATUS, ProjectUtil.Status.ACTIVE.getValue());
 
@@ -1606,6 +1605,7 @@ public class UserManagementActor extends BaseActor {
         removeUnwanted(requestMap);
         // update db with emailVerified as false (default)
         requestMap.put(JsonKey.EMAIL_VERIFIED, false);
+        requestMap.remove("isSocialRegister");
 
         Map<String, String> profileVisbility = new HashMap<>();
         for (String field : ProjectUtil.defaultPrivateFields) {
