@@ -1533,10 +1533,12 @@ public class UserManagementActor extends BaseActor {
         String accessToken = "";
         boolean isSocialRegister = (boolean) userMap.get("isSocialRegister");
         String userId = "";
+        ProjectLogger.log("User registration gateway, isSocialRegister =" + isSocialRegister, LoggerEnum.INFO.name());
         if (isSSOEnabled) {
             try {
                 if (isSocialRegister) {
                     userId = (String) userMap.get(JsonKey.USER_ID);
+                    ProjectLogger.log("User register with social gateway with userid" + userId, LoggerEnum.INFO.name());
                     if (StringUtils.isNotBlank(userId)) {
                         userMap.put(JsonKey.USER_ID, userId);
                         userMap.put(JsonKey.ID, userId);
@@ -1581,7 +1583,8 @@ public class UserManagementActor extends BaseActor {
         userMap.put(JsonKey.STATUS, ProjectUtil.Status.ACTIVE.getValue());
 
         if (!StringUtils.isBlank((String) userMap.get(JsonKey.PASSWORD))) {
-            emailTemplateMap.put(JsonKey.TEMPORARY_PASSWORD, userMap.get(JsonKey.PASSWORD));
+            // emailTemplateMap.put(JsonKey.TEMPORARY_PASSWORD, userMap.get(JsonKey.PASSWORD));
+            emailTemplateMap.remove(JsonKey.PASSWORD);
             userMap.put(JsonKey.PASSWORD,
                     OneWayHashing.encryptVal((String) userMap.get(JsonKey.PASSWORD)));
         } else {
