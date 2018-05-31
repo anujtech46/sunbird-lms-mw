@@ -1718,7 +1718,8 @@ public class UserManagementActor extends BaseActor {
         // user created successfully send the onboarding mail
         // putting rootOrgId to get web url per tenant while sending mail
         emailTemplateMap.put(JsonKey.ROOT_ORG_ID, userMap.get(JsonKey.ROOT_ORG_ID));
-        sendOnboardingMail(emailTemplateMap);
+        // sendOnboardingMail(emailTemplateMap);
+        ProjectLogger.log("Stop sending email", LoggerEnum.INFO.name());
         ProjectLogger.log("calling Send SMS method:", LoggerEnum.INFO);
         sendSMS(userMap);
 
