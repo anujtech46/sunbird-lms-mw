@@ -1531,7 +1531,7 @@ public class UserManagementActor extends BaseActor {
         userMap.put(JsonKey.ROLES, roles);
 
         String accessToken = "";
-        boolean isSocialRegister = (boolean) userMap.get("isSocialRegister");
+        boolean isSocialRegister = (boolean) userMap.getOrDefault("isSocialRegister", false);
         String userId = "";
         ProjectLogger.log("User registration gateway, isSocialRegister =" + isSocialRegister, LoggerEnum.INFO.name());
         if (isSSOEnabled) {
