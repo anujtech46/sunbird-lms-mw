@@ -1620,9 +1620,25 @@ public class UserManagementActor extends BaseActor {
     userMap.put(JsonKey.ROLES, roles);
 
     String accessToken = "";
+    String userId = ""; 
+    boolean isSocialRegister = (boolean) userMap.getOrDefault("isSocialRegister", false); 
     if (isSSOEnabled) {
       try {
-        String userId = "";
+        if (isSocialRegister) {
+            userId = (String) userMap.get(JsonKey.USER_ID);
+            System.out.println('User Request, isSSOEnabled'+ userId)
+            if (StringUtils.isNotBlank(userId)) {
+                userMap.put(JsonKey.USER_ID, userId);
+                userMap.put(JsonKey.ID, userId);
+            } else {
+                ProjectCommonException exception = new ProjectCommonException(
+                        ResponseCode.userRegUnSuccessfull.getErrorCode(),
+                        ResponseCode.userRegUnSuccessfull.getErrorMessage(),
+                        ResponseCode.SERVER_ERROR.getResponseCode());
+                sender().tell(exception, self());
+                return;
+            }
+        } else { 
         Map<String, String> responseMap = ssoManager.createUser(userMap);
         userId = responseMap.get(JsonKey.USER_ID);
         accessToken = responseMap.get(JsonKey.ACCESSTOKEN);
@@ -1649,12 +1665,14 @@ public class UserManagementActor extends BaseActor {
       userMap.put(JsonKey.ID, OneWayHashing.encryptVal((String) userMap.get(JsonKey.USERNAME)));
     }
 
+    requestMap.remove("isSocialRegister"); 
     userMap.put(JsonKey.CREATED_DATE, ProjectUtil.getFormattedDate());
     userMap.put(JsonKey.STATUS, ProjectUtil.Status.ACTIVE.getValue());
 
     if (!StringUtils.isBlank((String) userMap.get(JsonKey.PASSWORD))) {
-      emailTemplateMap.put(JsonKey.TEMPORARY_PASSWORD, userMap.get(JsonKey.PASSWORD));
-      userMap.put(
+    //   emailTemplateMap.put(JsonKey.TEMPORARY_PASSWORD, userMap.get(JsonKey.PASSWORD));
+        emailTemplateMap.remove(JsonKey.PASSWORD);
+        userMap.put(
           JsonKey.PASSWORD, OneWayHashing.encryptVal((String) userMap.get(JsonKey.PASSWORD)));
     } else {
       // create tempPassword
@@ -1678,6 +1696,7 @@ public class UserManagementActor extends BaseActor {
     removeUnwanted(requestMap);
     // update db with emailVerified as false (default)
     requestMap.put(JsonKey.EMAIL_VERIFIED, false);
+    requestMap.remove("isSocialRegister"); 
 
     Map<String, String> profileVisbility = new HashMap<>();
     for (String field : ProjectUtil.defaultPrivateFields) {
@@ -1796,7 +1815,8 @@ public class UserManagementActor extends BaseActor {
     // user created successfully send the onboarding mail
     // putting rootOrgId to get web url per tenant while sending mail
     emailTemplateMap.put(JsonKey.ROOT_ORG_ID, userMap.get(JsonKey.ROOT_ORG_ID));
-    sendOnboardingMail(emailTemplateMap);
+    // sendOnboardingMail(emailTemplateMap);
+    ProjectLogger.log("Stop Send onboard email:", LoggerEnum.INFO);
     ProjectLogger.log("calling Send SMS method:", LoggerEnum.INFO);
     sendSMS(userMap);
 
