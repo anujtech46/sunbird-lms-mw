@@ -1557,23 +1557,43 @@ public class UserManagementActor extends BaseActor {
     userMap.put(JsonKey.ROLES, roles);
 
     String accessToken = "";
+    String userId = "";
+    boolean isSocialRegister = (boolean) userMap.getOrDefault("isSocialRegister", false);
+    ProjectLogger.log("User registration gateway, isSocialRegister =" + isSocialRegister, LoggerEnum.INFO.name());
     if (isSSOEnabled) {
       try {
-        String userId = "";
         Map<String, String> responseMap = ssoManager.createUser(userMap);
         userId = responseMap.get(JsonKey.USER_ID);
         accessToken = responseMap.get(JsonKey.ACCESSTOKEN);
-        if (!StringUtils.isBlank(userId)) {
-          userMap.put(JsonKey.USER_ID, userId);
-          userMap.put(JsonKey.ID, userId);
+        if (isSocialRegister) {
+          ProjectLogger.log("User register with social gateway with userid" + userId, LoggerEnum.INFO.name());
+          userId = (String) userMap.get(JsonKey.USER_ID);
+          if (StringUtils.isNotBlank(userId)) {
+            userMap.put(JsonKey.USER_ID, userId);
+            userMap.put(JsonKey.ID, userId);
+          } else {
+            ProjectCommonException exception = new ProjectCommonException(
+                    ResponseCode.userRegUnSuccessfull.getErrorCode(),
+                    ResponseCode.userRegUnSuccessfull.getErrorMessage(),
+                    ResponseCode.SERVER_ERROR.getResponseCode());
+            sender().tell(exception, self());
+            return;
+          }
         } else {
-          ProjectCommonException exception =
-              new ProjectCommonException(
-                  ResponseCode.userRegUnSuccessfull.getErrorCode(),
-                  ResponseCode.userRegUnSuccessfull.getErrorMessage(),
-                  ResponseCode.SERVER_ERROR.getResponseCode());
-          sender().tell(exception, self());
-          return;
+          userId = responseMap.get(JsonKey.USER_ID);
+          accessToken = responseMap.get(JsonKey.ACCESSTOKEN);
+          if (!StringUtils.isBlank(userId)) {
+            userMap.put(JsonKey.USER_ID, userId);
+            userMap.put(JsonKey.ID, userId);
+          } else {
+            ProjectCommonException exception =
+                new ProjectCommonException(
+                    ResponseCode.userRegUnSuccessfull.getErrorCode(),
+                    ResponseCode.userRegUnSuccessfull.getErrorMessage(),
+                    ResponseCode.SERVER_ERROR.getResponseCode());
+            sender().tell(exception, self());
+            return;
+          }
         }
       } catch (Exception exception) {
         ProjectLogger.log(exception.getMessage(), exception);
@@ -1586,13 +1606,15 @@ public class UserManagementActor extends BaseActor {
       userMap.put(JsonKey.ID, OneWayHashing.encryptVal((String) userMap.get(JsonKey.USERNAME)));
     }
 
+    userMap.remove("isSocialRegister");
     userMap.put(JsonKey.CREATED_DATE, ProjectUtil.getFormattedDate());
     userMap.put(JsonKey.STATUS, ProjectUtil.Status.ACTIVE.getValue());
 
     if (!StringUtils.isBlank((String) userMap.get(JsonKey.PASSWORD))) {
-      emailTemplateMap.put(JsonKey.TEMPORARY_PASSWORD, userMap.get(JsonKey.PASSWORD));
+      // emailTemplateMap.put(JsonKey.TEMPORARY_PASSWORD, userMap.get(JsonKey.PASSWORD));
       userMap.put(
           JsonKey.PASSWORD, OneWayHashing.encryptVal((String) userMap.get(JsonKey.PASSWORD)));
+      emailTemplateMap.remove(JsonKey.PASSWORD);
     } else {
       // create tempPassword
       String tempPassword = ProjectUtil.generateRandomPassword();
@@ -1615,6 +1637,7 @@ public class UserManagementActor extends BaseActor {
     removeUnwanted(requestMap);
     // update db with emailVerified as false (default)
     requestMap.put(JsonKey.EMAIL_VERIFIED, false);
+    requestMap.remove("isSocialRegister");
 
     Map<String, String> profileVisbility = new HashMap<>();
     for (String field : ProjectUtil.defaultPrivateFields) {
@@ -1706,7 +1729,8 @@ public class UserManagementActor extends BaseActor {
     // user created successfully send the onboarding mail
     // putting rootOrgId to get web url per tenant while sending mail
     emailTemplateMap.put(JsonKey.ROOT_ORG_ID, userMap.get(JsonKey.ROOT_ORG_ID));
-    sendOnboardingMail(emailTemplateMap);
+    // sendOnboardingMail(emailTemplateMap);
+    ProjectLogger.log("Stop sending email", LoggerEnum.INFO.name());
     ProjectLogger.log("calling Send SMS method:", LoggerEnum.INFO);
     sendSMS(userMap);
 
