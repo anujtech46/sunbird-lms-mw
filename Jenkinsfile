@@ -14,7 +14,7 @@ node('master') {
         env.NODE_ENV = "build"
         print "Environment will be : ${env.NODE_ENV}"
         sh('git submodule foreach git pull origin release-1.7')
-        sh('sudo mvn clean install -DskipTests=true')
+        sh('mvn clean install -DskipTests=true')
          sh('chmod 777 ./build.sh')
          sh('./build.sh')
       }
