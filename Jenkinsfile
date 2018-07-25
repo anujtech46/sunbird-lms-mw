@@ -19,15 +19,15 @@ node('master') {
          sh('./build.sh')
       }
 
-      stage('Publish'){
-        echo 'Push to Repo'
-        sh 'ls -al ~/'
-        sh('chmod 777 ./dockerPushToRepo.sh')
-        sh 'ARTIFACT_LABEL=bronze ./dockerPushToRepo.sh'
-        sh './metadata.sh > metadata.json'
-        sh 'cat metadata.json'
-        archive includes: "metadata.json"
-      }
+      // stage('Publish'){
+      //   echo 'Push to Repo'
+      //   sh 'ls -al ~/'
+      //   sh('chmod 777 ./dockerPushToRepo.sh')
+      //   sh 'ARTIFACT_LABEL=bronze ./dockerPushToRepo.sh'
+      //   sh './metadata.sh > metadata.json'
+      //   sh 'cat metadata.json'
+      //   archive includes: "metadata.json"
+      // }
 
       }
     catch (err) {

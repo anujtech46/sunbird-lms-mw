@@ -1562,9 +1562,6 @@ public class UserManagementActor extends BaseActor {
     ProjectLogger.log("User registration gateway, isSocialRegister =" + isSocialRegister, LoggerEnum.INFO.name());
     if (isSSOEnabled) {
       try {
-        Map<String, String> responseMap = ssoManager.createUser(userMap);
-        userId = responseMap.get(JsonKey.USER_ID);
-        accessToken = responseMap.get(JsonKey.ACCESSTOKEN);
         if (isSocialRegister) {
           ProjectLogger.log("User register with social gateway with userid" + userId, LoggerEnum.INFO.name());
           userId = (String) userMap.get(JsonKey.USER_ID);
@@ -1580,6 +1577,7 @@ public class UserManagementActor extends BaseActor {
             return;
           }
         } else {
+          Map<String, String> responseMap = ssoManager.createUser(userMap);
           userId = responseMap.get(JsonKey.USER_ID);
           accessToken = responseMap.get(JsonKey.ACCESSTOKEN);
           if (!StringUtils.isBlank(userId)) {
